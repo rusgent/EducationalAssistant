@@ -7,7 +7,7 @@ import asyncio
 
 
 DB_PATH = 'databaseforschool.db'
-
+# Hi BRO
 
 async def insert_schedule():
     async with aiosqlite.connect(DB_PATH) as db:
