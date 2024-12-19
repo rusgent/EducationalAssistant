@@ -106,7 +106,8 @@ async def cmd_teh(message: Message):
 
 
 @common_router.callback_query(F.data == 'help')
-async def cb_help(callback: CallbackQuery):
+async def cb_help(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
     await cmd_help(callback.message)
     await callback.answer()
 
