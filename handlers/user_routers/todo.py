@@ -88,6 +88,7 @@ async def give_desc_task(message: Message, state: FSMContext):
         await message.answer(
             text="❌ Описание задачи может быть только <b>ТЕКСТОМ</b>"
         )
+        # Test
 
 
 
