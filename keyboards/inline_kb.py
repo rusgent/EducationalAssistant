@@ -7,14 +7,6 @@ from aiogram.types import (ReplyKeyboardMarkup,
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-def create_delete_news_kb(date):
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Удалить новость', callback_data=f'news {date}')]
-    ])
-    
-    return kb
-
-
 def q1_ikb():
     buttons = [
         [InlineKeyboardButton(text="👥 Работать с людьми", callback_data="q1_human"),
