@@ -8,6 +8,6 @@ from .todo import todo_router
 
 user_router = Router()
 user_router.include_routers(
-    common_router, shedule_router, favcls_router,
+    common_router, favcls_router, shedule_router,
     prof_test_router, middle_mark_router, todo_router
     )
