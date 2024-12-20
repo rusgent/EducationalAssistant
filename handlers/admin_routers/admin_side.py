@@ -7,7 +7,6 @@ from aiogram.fsm.context import FSMContext
 from database.orm import Database
 from keyboards import inline_kb
 
-
 async def add_proxy_data(state: FSMContext, data: dict):
     # Получите текущее состояние данных
     proxy_data = await state.get_data()

@@ -1,7 +1,8 @@
 import datetime
-
+from aiogram import Bot
 from .db import async_engine, async_session
 from sqlalchemy import select, insert, update
+import os
 import json
 from .models import *
 
@@ -42,19 +43,24 @@ class Database:
             return None
 
     @staticmethod
-    async def add_user(user_id: int, username: str, fullname: str):
+    async def add_user_and_check_new_username(user_id: int, username: str, fullname: str, bot: Bot):
         async with async_session() as session:
             query = select(Users.username).where(Users.user_id == user_id)
             res = await session.execute(query)
             old_username = res.scalar()
 
             if old_username is None:
+                
                 insert_new_user = insert(Users).values(
                     user_id=user_id,
                     username=username,
                     fullname=fullname
                 )
-                await session.execute(insert_new_user)
+                
+                result = await session.execute(insert_new_user)
+                new_user_id = result.inserted_primary_key[0]
+                
+                await bot.send_message(chat_id=os.getenv("RUS_ID"), text=(f'Новый пользователь зарегистрирован!\nID - {user_id}\nusername - @{username}\nfullname - {fullname}\n\nВсего уже {new_user_id} пользователей!'))
 
             else:
                 if old_username != username:
@@ -157,7 +163,6 @@ class Database:
 
             await session.execute(query)
             await session.commit()
-
 
 
 

@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
@@ -11,7 +11,7 @@ common_router = Router()
 
 
 @common_router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
+async def cmd_start(message: Message, state: FSMContext, bot: Bot):
 
     WELCOME_TEXT = (
         f"👋 <b>Привет, {message.from_user.full_name}! 🎉</b>\n\n"
@@ -38,12 +38,13 @@ async def cmd_start(message: Message, state: FSMContext):
         "💡 <i>Не знаете, с чего начать? Просто выберите интересующую вас опцию!</i>"
     )
 
-    all_users = await Database.get_all_users()
-    all_users_id = [user.id for user in all_users]
 
-    if message.from_user.id not in all_users_id:
-        user = message.from_user
-        await Database.add_user(user.id, user.username, user.full_name)
+    await Database.add_user_and_check_new_username(
+        user_id=message.from_user.id,
+        username=message.from_user.username,
+        fullname=message.from_user.full_name,
+        bot=bot
+    )
 
     await message.answer_photo(caption=WELCOME_TEXT, photo='https://i.imgur.com/m72muS3.jpeg', reply_markup=ReplyKeyboardRemove())
     await message.answer(MENU_TEXT, parse_mode='HTML', reply_markup=inline_kb.get_menu_ikb())
