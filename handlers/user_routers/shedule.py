@@ -6,42 +6,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 
 from database.orm import Database
+from handlers.user_routers.texts import *
 from handlers.user_routers.common import cmd_menu
+from .common import *
 from handlers.user_routers.states import GiveSchedule
 from keyboards import reply_kb, inline_kb
 
 
 shedule_router = Router()
-
-
-@shedule_router.message(Command('shedule'))
-async def get_shedule_and_give_num(message: Message, state: FSMContext, user_id: int = None):
-    await state.clear()
-
-    await state.set_state(GiveSchedule.slctnum)
-
-    text = (
-        f"📅 <b>Введите номер класса</b> — "
-        "<i>нажмите на соответствующую кнопку под полем ввода или введите номер класса вручную"
-        "(например, 9A или 10А)</i>\n\n"
-        "👇 <b>Вы также быстро можете выбрать класс из своих избранных классов, "
-        "нажав на кнопку под следующим сообщением\n\n"
-        "🗂 Добавить класс в избранное по команде —> /favorites</b>"
-
-    )
-
-    await message.answer(
-        text,
-        reply_markup= await reply_kb.kb_select_class_num(),
-        parse_mode='HTML'
-    )
-
-    user_id = user_id or message.from_user.id
-
-    favcls_list = await Database.get_favcls_list(user_id)
-
-    if favcls_list:
-        await message.answer("❤ Выберите класс из избранных 👇", reply_markup=inline_kb.get_favcls_ikb(favcls_list))
 
 
 @shedule_router.callback_query(F.data.in_(["schedule", "new_schedule"]))
@@ -75,13 +47,10 @@ async def give_lit(message: Message, state: FSMContext):
 
         if message.text in ['5', '6', '7', '8', '9', '10', '11']:
             await state.set_state(GiveSchedule.slctlit)
-            res_text = (f"📚 <b>Вы успешно выбрали номер класса {msg} «?» класс</b>\n\n"
-                "<b>🔤 А давай выберем теперь литерал класса! Его также можно выбрать быстрее из кнопки под полем ввода\n\n"
-                "<i>Либо напишите сами букву нужного для вас класса (любого регистра) 😉</i></b>")
 
             await state.update_data(selected_class_num=msg)
 
-            await message.answer(text=res_text, reply_markup=await reply_kb.kb_select_class_lit())
+            await message.answer(text=SHEDULE_NICE_NUMBER_GIVE_LIT.format(msg=msg), reply_markup=await reply_kb.kb_select_class_lit())
 
         elif len(msg) > 1 and len(msg) < 4 and msg[:-1].isdigit() and 5 <= int(msg[:-1]) <= 11 and msg[-1].isalpha():
 
@@ -101,26 +70,16 @@ async def give_lit(message: Message, state: FSMContext):
                 await state.set_state(GiveSchedule.slct_day)
 
             else:
-                res_text = ("❌ <b>Данный класс не найден!</b>\n\n"
-                            "🙏 Пожалуйста, введите корректный класс, который должен состоять из цифры (от 5 до 11) и одной буквы"
-                            "<i> | Пример: '9А', '10Б', '11В' и т.д.</i>\n\n"
-                            "Если класс все таки не отображается в списке, возможно, его расписание ещё не добавлено в базу данных.\n\n"
-                            "<b>👇 Вы можете вернуться в меню, нажав на кнопку ниже или используйте команду - /menu</b>")
                 await message.answer_sticker(
                     sticker='CAACAgIAAxkBAAEM_H9nE2X7FR6PqLJJXsw6rChl2eJusgAC6RMAAiBRQEtjB12ULYwTNjYE')
-                await message.answer(text=res_text,
+                await message.answer(text=SHEDULE_ERROR_NUMBER,
                                  reply_markup=inline_kb.menu_ikb())
                 await state.set_state(GiveSchedule.slctnum)
 
         else:
-            res_text = ("❌ <b>Неверный формат класса!</b>\n\n"
-                        "🙏 Пожалуйста, введите номер класса, который должен состоять из цифры (от 5 до 11)\n"
-                        "<i>Или сразу отправьте класс полного формата (например '9А', '10Б' и т.д.)</i>\n\n"
-                        "<b>👇 Вы можете вернуться в меню, нажав на кнопку ниже или используйте команду - /menu</b>")
-
             await message.answer_sticker(
                 sticker='CAACAgIAAxkBAAEM_AtnEq5NOXbSot3y4c-QRHar9YA4vgACfxEAAhhA8UrOIDTUp-mQxjYE')
-            await message.answer(text=res_text,
+            await message.answer(text=SHEDULE_ERROR_FORMAT_NUMBER,
                                  reply_markup=inline_kb.menu_ikb())
 
 
@@ -130,14 +89,9 @@ async def slct_day(message: Message, state: FSMContext):
         msg = message.text.upper()
 
         if msg not in ['А', 'Б', 'В', 'Ш', 'П'] and len(msg) == 1:
-            res_text = ("❌ <b>Данный класс не найден!</b>\n\n"
-                        "🙏 Пожалуйста, введите литерал класса, который может состоять из букв (А, Б, В, Ш, П)"
-                        "<i> | Пример: 'А', 'Б', 'В' и т.д.</i>\n\n"
-                        "Если класс все таки не отображается в списке, возможно, его расписание ещё не добавлено в базу данных.\n\n"
-                        "<b>👇 Вы можете вернуться в меню, нажав на кнопку ниже или используйте команду - /menu</b>")
             await message.answer_sticker(
                 sticker='CAACAgIAAxkBAAEM_H9nE2X7FR6PqLJJXsw6rChl2eJusgAC6RMAAiBRQEtjB12ULYwTNjYE')
-            await message.answer(text=res_text,
+            await message.answer(text=SHEDULE_ERROR_NOT_FIND_CLASS,
                                  reply_markup=inline_kb.menu_ikb())
 
         elif msg in ['А', 'Б', 'В', 'Ш', 'П'] and len(msg) == 1:
@@ -166,26 +120,17 @@ async def slct_day(message: Message, state: FSMContext):
                                      reply_markup=inline_kb.three_days_ikb())
 
             else:
-                res_text = ("❌ <b>Данный класс не найден!</b>\n\n"
-                            "🙏 Пожалуйста, перепроверьте литерал вашего класса и отправьте верный литерал"
-                            "\nЕсли класс все таки не отображается в списке, "
-                            "возможно, его расписание ещё не добавлено в базу данных.\n\n"
-                            "<b>👇 Вы можете вернуться в меню, нажав на кнопку ниже или используйте команду - /menu</b>")
                 await message.answer_sticker(
                     sticker='CAACAgIAAxkBAAEM_H9nE2X7FR6PqLJJXsw6rChl2eJusgAC6RMAAiBRQEtjB12ULYwTNjYE')
-                await message.answer(text=res_text,
+                await message.answer(text=SHEDULE_ERROR_NOT_FIND_CLASS,
                                  reply_markup=inline_kb.menu_ikb())
 
 
         else:
-            res_text = ("❌ <b>Неверный формат литерала (буква класса)!</b>\n\n"
-                        "🙏 Пожалуйста, введите литерал класса, который может состоять из букв (А, Б, В, Ш, П)\n\n"
-                        "<b>👇 Вы можете вернуться в меню, нажав на кнопку ниже или используйте команду - /menu</b>")
-
             await message.answer_sticker(
                 sticker='CAACAgIAAxkBAAEM_AtnEq5NOXbSot3y4c-QRHar9YA4vgACfxEAAhhA8UrOIDTUp-mQxjYE')
 
-            await message.answer(text=res_text,
+            await message.answer(text=SHEDULE_ERROR_FORMAT_LIT,
                                  reply_markup=inline_kb.menu_ikb())
 
 
@@ -270,7 +215,7 @@ async def select_day_cb(callback: CallbackQuery, state: FSMContext):
             if lessons:
                 text += await format_shedule(res_lessons)
 
-                sent_message = await callback.message.answer(text=".", reply_markup=ReplyKeyboardRemove())
+                sent_message = await callback.message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
 
                 text += "<i>\nУдачного дня и отличных уроков! 💪📚</i>"
 
@@ -331,7 +276,7 @@ async def select_other_day_cb(callback: CallbackQuery, state: FSMContext):
 
         text += "<i>\nУдачного дня и отличных уроков! 💪📚</i>"
 
-        sent_message = await callback.message.answer(text=".", reply_markup=ReplyKeyboardRemove())
+        sent_message = await callback.message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
         await callback.bot.delete_message(chat_id=callback.message.chat.id, message_id=sent_message.message_id)
 
         await callback.message.edit_text(text=text, reply_markup=inline_kb.next_or_prev_day(full_cls, ind))

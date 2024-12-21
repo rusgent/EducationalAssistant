@@ -5,39 +5,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 
 from database.orm import Database
-from keyboards import inline_kb
+
+from keyboards import inline_kb, reply_kb
+from .texts import *
+from .states import *
 
 common_router = Router()
 
 
 @common_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
-
-    WELCOME_TEXT = (
-        f"👋 <b>Привет, {message.from_user.full_name}! 🎉</b>\n\n"
-        "Добро пожаловать в <b>🎓 Образовательный Помощник</b>!\n\n"
-        "<b>🤖 Этот бот создан для удобства и автоматизации школьных процессов. Вы сможете:</b>\n"
-        "<blockquote>🧠 Пройти профориентационный тест и получить рекомендации</blockquote>\n"
-        "<blockquote>🧮 Рассчитать свои оценки с помощью калькулятора и узнать, какие оценки нужны для "
-        "достижения цели</blockquote>\n"
-        "<blockquote>🗃 Получить расписание занятий для своего класса</blockquote>\n\n"
-        "<b>👇 Вот что я могу сделать для вас:</b>\n"
-        "<blockquote>❓ <b>/help — </b>Получить помощь по использованию бота</blockquote>\n"
-        "<blockquote>🧮 <b>/marks — </b>Рассчитать свой средний балл с помощью калькулятора оценок</blockquote>\n"
-        "<blockquote>🗃 <b>/shedule — </b>Получить расписание, по своему классу</blockquote>\n"
-        "<blockquote>🧠 <b>/test — </b>Пройти тест на профориентацию и получить рекомендации</blockquote>\n"
-        "<blockquote>💬 <b>/teh — </b>Cвязаться с тех.поддержкой бота</blockquote>"
-    )
-
-    MENU_TEXT = (
-        "<b>🎓 Главное Меню 📚</b>\n\n"
-        "👉 Выберите одну из опций ниже:\n\n"
-        "🧠 <b>Профориентационный тест</b> — Найдите свое призвание\n"
-        "🧮 <b>Калькулятор оценок</b> — Рассчитайте свой средний балл\n"
-        "🗃 <b>Расписание</b> — Получите расписание по своему классу\n\n"
-        "💡 <i>Не знаете, с чего начать? Просто выберите интересующую вас опцию!</i>"
-    )
-
 
     await Database.add_user_and_check_new_username(
         user_id=message.from_user.id,
@@ -46,63 +23,28 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
         bot=bot
     )
 
-    await message.answer_photo(caption=WELCOME_TEXT, photo='https://i.imgur.com/m72muS3.jpeg', reply_markup=ReplyKeyboardRemove())
+    await message.answer_photo(caption=WELCOME_TEXT.format(full_name=message.from_user.full_name), photo='https://i.imgur.com/m72muS3.jpeg', reply_markup=ReplyKeyboardRemove())
     await message.answer(MENU_TEXT, parse_mode='HTML', reply_markup=inline_kb.get_menu_ikb())
 
 
 @common_router.message(Command('menu'))
 async def cmd_menu(message: Message, state: FSMContext):
 
-    sent_message = await message.answer(text=".", reply_markup=ReplyKeyboardRemove())
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
     await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
 
     await state.clear()
-
-    MENU_TEXT = (
-        "<b>🎓 Главное Меню 📚</b>\n\n"
-        "👉 Выберите одну из опций ниже:\n\n"
-        "🧠 <b>Профориентационный тест</b> — Найдите свое призвание\n"
-        "🧮 <b>Калькулятор оценок</b> — Рассчитайте свой средний балл\n"
-        "🗃 <b>Расписание</b> — Получите расписание по своему классу\n\n"
-        "💡 <i>Не знаете, с чего начать? Просто выберите интересующую вас опцию!</i>"
-    )
 
     await message.answer(MENU_TEXT, parse_mode='HTML', reply_markup=inline_kb.get_menu_ikb())
 
 
 @common_router.message(Command('help'))
 async def cmd_help(message: Message):
-
-    HELP_TEXT = (
-        "👋 <b>Привет!</b> Я — ваш <b>Образовательный Помощник</b> 🎓\n\n"
-        "Вот тут представлены все мои команды:\n\n"
-        "🔹 <b>/start</b> — Перезапустить/Начать работу с ботом и увидеть главное меню.\n"
-        "🔹 <b>/menu</b> — Вызов главного меню.\n"
-        "🔹 <b>/marks</b> — Калькулятор оценок для расчета среднего балла.\n"
-        "🔹 <b>/shedule</b> — Получить расписание для своего класса.\n"
-        "🔹 <b>/test</b> — Пройти профориентационный тест и получить рекомендации.\n"
-        "🔹 <b>/favorites</b> — Взаимодействие со списком ваших избранных классов для быстрого доступа к расписанию.\n"
-        "🔹 <b>/teh</b> — Связаться с техподдержкой.\n\n"
-        "💡 <i>Если у вас возникли вопросы по использованию бота, не стесняйтесь обращаться к техподдержке.</i>"
-    )
-
     await message.answer(HELP_TEXT, parse_mode='HTML')
 
 
 @common_router.message(Command("teh"))
 async def cmd_teh(message: Message):
-
-    TEH_SUPPORT_TEXT = (
-        "🛠 <b>Техническая поддержка</b> 🛠\n\n"
-        "Если у вас возникли вопросы или трудности при использовании бота, "
-        "вы можете обратиться за помощью к нашей техподдержке по ссылке ниже:\n\n"
-        "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n\n"
-        "📌 <b>Важно:</b> Просим не спамить в чате и подождать ответа — специалисты ответят вам в ближайшее время. "
-        "Ваши вопросы и предложения важны для нас, и мы постараемся помочь как можно скорее.\n\n"
-        "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
-        "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!"
-    )
-
     await message.answer(TEH_SUPPORT_TEXT, parse_mode='HTML', disable_web_page_preview=True)
 
 
@@ -127,3 +69,121 @@ async def menu_ikb(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+@common_router.message(Command('favorites'))
+async def cmd_favorites(message: Message, state: FSMContext):
+
+    await state.clear()
+    send_message = await message.answer(text="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=send_message.message_id)
+
+    text = (
+        f"🤫<b> Избранные классы помогают вам быстрее получить расписание по вашему классу</b>\n\n"
+        "❤ Ваши избранные классы:\n"
+    )
+
+    list_favcls = await Database.get_favcls_list(message.from_user.id)
+
+    if list_favcls:
+        for cls in list_favcls:
+            text += f'<i>• {cls}</i>\n'
+
+    else:
+        text += '<i>☹ У вас нету избранных классов</i>'
+
+
+
+    await message.answer(
+        text,
+        reply_markup=inline_kb.get_del_or_add_favcls_or_menu(),
+        parse_mode='HTML'
+    )
+    
+    
+@common_router.message(Command('marks'))
+async def cmd_marks(message: Message, state: FSMContext):
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+
+    list_marks = []
+    average_mark = 0.0
+
+    await state.update_data(
+        list_marks=list_marks,
+        average_mark=average_mark)
+
+    await message.answer(text=TEXT_MARKS,
+                         reply_markup=inline_kb.list_2345_marks())
+
+    await state.set_state(MarksState.waiting_add_marks)
+
+
+
+@common_router.message(Command('test'))
+async def start_test(message: Message, state: FSMContext):
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+    
+    await message.answer(text=TEST_Q1,
+        parse_mode='HTML',
+        reply_markup=inline_kb.q1_ikb()
+    )
+    await state.set_state(TestStates.Q1)
+    
+@common_router.message(Command('view_results'))
+async def cmd_view_results(message: Message):
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+    
+    rows = await Database.check_result(message.from_user.id)
+
+    if not rows:
+        await message.answer(
+            "<b>🚫 Вы еще не проходили тест.</b>\nПожалуйста, пройдите тест, чтобы увидеть результаты.",
+            parse_mode='HTML'
+        )
+        return
+
+
+    results_message = "<b>📋 Ваши предыдущие результаты:</b>\n\n"
+    print(rows)
+    for row in rows:
+        result, timestamp = row
+        results_message += (
+            f"✅ <b>Результат: {result}</b> <i>(Дата и время: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}</i>)\n"
+        )
+
+
+    await message.answer(results_message, parse_mode='HTML', reply_markup=inline_kb.share_ikb())
+    
+    
+@common_router.message(Command('shedule'))
+async def get_shedule_and_give_num(message: Message, state: FSMContext, user_id: int = None):
+    
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+    
+    await state.clear()
+
+    await state.set_state(GiveSchedule.slctnum)
+
+    await message.answer(
+        TEXT_SHEDULE_GIVE_NUMBER,
+        reply_markup= await reply_kb.kb_select_class_num(),
+        parse_mode='HTML'
+    )
+
+    user_id = user_id or message.from_user.id
+
+    favcls_list = await Database.get_favcls_list(user_id)
+
+    if favcls_list:
+        await message.answer("❤ Выберите класс из избранных 👇", reply_markup=inline_kb.get_favcls_ikb(favcls_list))
+
+
+@common_router.message(Command('todo'))
+async def cmd_todo(message: Message):
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+
+    await message.answer(text=TEXT_INFO_TREKER, reply_markup=inline_kb.get_todo_ikb())

@@ -5,38 +5,28 @@ from .states import Task
 from keyboards import inline_kb
 from aiogram.fsm.context import FSMContext
 from database.orm import Database
+from handlers.user_routers.texts import *
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 
 todo_router = Router()
 
 
-@todo_router.message(Command('todo'))
-async def cmd_todo(message: Message):
-    TEXT = (f"📝 <b>Трекер задач</b>\n\n"
-    "Здесь ты можешь легко управлять своими задачами: добавлять, просматривать и удалять их.\n"
-    "Я могу напоминать тебе о важных задачах, следить за сроками и помогать не забывать о важных делах!\n\n"
-    "✨ <i>Выбери действие ниже и начни работать над задачами!</i>"
-    )
-
-    await message.answer(text=TEXT, reply_markup=inline_kb.get_todo_ikb())
-
-
 @todo_router.callback_query(F.data == 'add_task')
 async def cb_add_task(callback: CallbackQuery, state: FSMContext):
-    TEXT = (f"➕ <b>Добавление новой задачи</b>\n\n"
-        "🚀 Отлично, давай начнем! Для того чтобы я мог добавить твою задачу, "
-        "напиши мне <b>название задачи</b>, чтобы мы могли двигаться дальше.\n")
-
-    await callback.message.answer(text=TEXT)
+    await callback.message.answer(text=TODO_ADD_TASK_GIVE_NAME_TASK)
     await state.set_state(Task.add_name_newtask)
     await callback.answer()
 
 
 @todo_router.callback_query(F.data == 'view_tasks')
 async def cb_add_task(callback: CallbackQuery):
-    TEXT = (f"📋 <b>Просмотр задач</b>\n\n"
-            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "
-            "напиши мне <b>название задачи</b>, чтобы мы могли двигаться дальше.\n")
+    TEXT = f"📋 <b>Просмотр задач</b>\n"
+    # tasks_names = []
+    # for name_task in tasks_names:
+    #     TEXT += '🔸 Задача 1'
+        
+    
+    TEXT += "Выбери ниже кнопку задачу, чтобы посмотреть ее подробности"
 
     await callback.message.answer(text=TEXT)
     await callback.answer()
@@ -47,14 +37,7 @@ async def give_name_task(message: Message, state: FSMContext):
     if message.text:
         task_name = message.text
         await state.update_data(task_name=task_name)
-        TEXT = (
-            f"<blockquote><b>Название задачи:</b> {task_name}\n"
-            f"<b>Описание:</b> ???</blockquote>\n\n"
-            "🎉 Отлично, название задачи добавлено!\n"
-            "Теперь, чтобы завершить создание задачи, отправь мне <b>описание</b> или <b>суть</b> задачи"
-        )
-
-        await message.answer(text=TEXT)
+        await message.answer(text=TODO_NICE_NAME_TASK_GIVE_DESC_TASK.format(task_name=task_name))
         await state.set_state(Task.add_desc_newtask)
 
     else:

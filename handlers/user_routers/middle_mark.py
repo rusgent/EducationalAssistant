@@ -3,7 +3,8 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
-
+from .common import *
+from handlers.user_routers.texts import *
 from handlers.user_routers.states import MarksState
 from keyboards import inline_kb
 
@@ -22,28 +23,6 @@ async def calc_marks_ikb(callback: CallbackQuery, state: FSMContext):
     await cmd_marks(callback.message, state)
 
     await callback.answer()
-
-
-@middle_mark_router.message(Command('marks'))
-async def cmd_marks(message: Message, state: FSMContext):
-    TEXT = (
-        '<b>💯 Вы успешно зашли в режим расчета среднего балла</b>\n\n'
-        '📋 Список ваших оценок пока что пуст :(\n\n'
-        '📊 Ваш средний балл -> 0.0\n\n'
-        '👇 Нажимая на кнопки ниже, вы можете добавлять в свой список нужные оценки'
-    )
-
-    list_marks = []
-    average_mark = 0.0
-
-    await state.update_data(
-        list_marks=list_marks,
-        average_mark=average_mark)
-
-    await message.answer(text=TEXT,
-                         reply_markup=inline_kb.list_2345_marks())
-
-    await state.set_state(MarksState.waiting_add_marks)
 
 
 @middle_mark_router.callback_query(MarksState.waiting_add_marks)
@@ -74,21 +53,14 @@ async def add_marks_cb(callback: CallbackQuery, state: FSMContext):
     else:
         quarter_grade = '2 🔴'
 
-    TEXT = (
-        '<b>💯 Вы успешно зашли в режим расчета среднего балла</b>\n\n'
-        f'<b>📋 Список ваших оценок ⬇️\n'
-        f'| {marks_display}\n\n'
-        f'📊 Ваш средний балл ➡️ {new_avg:.2f}\n'
-        f'🔄 Оценка, которая выйдет в четверть: {quarter_grade}</b>\n\n'
-        f'📈 Прогноз успеваемости:\n'
-        f'🔹 Кол-во 5ок до ср. балла 4.5: {int(target_5_for_4_5)}\n'
-        f'🔹 Кол-во 5ок до ср. балла 3.5: {int(target_5_for_3_5)}\n'
-        f'🔹 Кол-во 4ок до ср. балла 3.5: {int(target_4_for_3_5)}\n\n'
-        '👇 Нажимая на кнопки ниже, вы можете добавлять в свой список нужные оценки'
-    )
 
     await callback.bot.edit_message_text(
-        text=TEXT,
+        text=TEXT_LIST_MARKS.format(marks_display=marks_display,
+                                    quarter_grade=quarter_grade,
+                                    new_avg=f"{new_avg:.2f}",
+                                    target_4_for_3_5=int(target_4_for_3_5),
+                                    target_5_for_3_5=int(target_5_for_3_5),
+                                    target_5_for_4_5=int(target_5_for_4_5)),
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
         reply_markup=inline_kb.list_2345_marks()
