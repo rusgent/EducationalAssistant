@@ -17,21 +17,6 @@ async def cb_add_task(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Task.add_name_newtask)
     await callback.answer()
 
-
-@todo_router.callback_query(F.data == 'view_tasks')
-async def cb_add_task(callback: CallbackQuery):
-    TEXT = f"📋 <b>Просмотр задач</b>\n"
-    # tasks_names = []
-    # for name_task in tasks_names:
-    #     TEXT += '🔸 Задача 1'
-        
-    
-    TEXT += "Выбери ниже кнопку задачу, чтобы посмотреть ее подробности"
-
-    await callback.message.answer(text=TEXT)
-    await callback.answer()
-
-
 @todo_router.message(Task.add_name_newtask)
 async def give_name_task(message: Message, state: FSMContext):
     if message.text:
@@ -71,7 +56,54 @@ async def give_desc_task(message: Message, state: FSMContext):
         await message.answer(
             text="❌ Описание задачи может быть только <b>ТЕКСТОМ</b>"
         )
-        # Test
+        
+        
+        
+
+@todo_router.callback_query(F.data == 'view_tasks')
+async def cb_add_task(callback: CallbackQuery, state: FSMContext):
+    TEXT = (f"📋 <b>Просмотр задач</b>\n\n"
+             "👇 Выбери ниже кнопку задачи, чтобы посмотреть ее подробности и взаимодействовать с ней")
+
+    tasks = await Database.get_tasks_list(user_id=callback.from_user.id)
+    await state.update_data(tasks=tasks)
+    
+    ikb = inline_kb.get_tasks_list(tasks, 0)
+    
+    await callback.message.edit_text(text=TEXT, reply_markup=ikb)
+    await callback.answer()
+    
+    
+@todo_router.callback_query(F.data.startswith('tprev') | F.data.startswith('tnext'))
+async def next_or_prev_tasks_list(callback: CallbackQuery, state: FSMContext):
+    _, page = callback.data.split('_')
+    page = int(page)
+
+    data = await state.get_data()
+    tasks = data.get('tasks')
+    
+    ikb = inline_kb.get_tasks_list(tasks, page=page)
+    
+    await callback.message.edit_reply_markup(reply_markup=ikb)
+    await callback.answer()
+    
+
+@todo_router.callback_query(F.data.startswith('task_'))
+async def cb_add_task(callback: CallbackQuery, state: FSMContext):
+    task_id = int(callback.data.split('_')[1])
+
+    task = await Database.get_task(task_id=task_id)
+
+    
+    TEXT = (f'Ваша задача\n'
+            f'<b>Название - <i>{task.task_name}</i></b>\n'
+            f'<b>Описание - <i>{task.description}</i></b>\n'
+            f'<b>Статус - <i>{task.status}</i></b>')
+
+    
+    await callback.message.edit_text(text=TEXT, reply_markup=inline_kb.get_func_task_ikb())
+    await callback.answer()
+
 
 
 

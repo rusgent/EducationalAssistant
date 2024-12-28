@@ -220,7 +220,8 @@ def next_or_prev_day(cls, ind_day):
 def get_todo_ikb():
     ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
         [InlineKeyboardButton(text="➕ Добавить задачу", callback_data="add_task")],
-        [InlineKeyboardButton(text="📋 Просмотр задач", callback_data="view_tasks")]
+        [InlineKeyboardButton(text="📋 Просмотр задач", callback_data="view_tasks")],
+        [InlineKeyboardButton(text="🚪 Меню", callback_data="menu")]
     ])
 
     return ikb
@@ -228,7 +229,41 @@ def get_todo_ikb():
 
 def get_view_tasks_ikb():
     ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
-        [InlineKeyboardButton(text="📋 Просмотр задач", callback_data="view_tasks")]
+        [InlineKeyboardButton(text="➕ Добавить новую задачу", callback_data="add_task")],
+        [InlineKeyboardButton(text="📋 Просмотр задач", callback_data="view_tasks")],
+        [InlineKeyboardButton(text="🚪 Меню", callback_data="menu")]
+    ])
+
+    return ikb
+
+
+def get_tasks_list(tasks,page=0, tasks_per_page=5):
+    ikb = InlineKeyboardBuilder()
+    
+    start = page * tasks_per_page
+    end = start + tasks_per_page
+    tasks_on_page = tasks[start:end]
+    
+    for task in tasks_on_page:
+        ikb.button(text=task.task_name, callback_data=f'task_{task.id}')
+    
+    if page > 0:
+        ikb.button(text="⬅️", callback_data=f'tprev_{page-1}')
+        
+    if end < len(tasks):
+        ikb.button(text="➡️", callback_data=f'tprev_{page+1}')
+    
+    ikb.adjust(1, 1, 1, 1, 1)
+    
+    return ikb.as_markup(resize_keyboard=True)
+
+
+def get_func_task_ikb():
+    ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="☑ Выполнено", callback_data="nice_task")],
+        [InlineKeyboardButton(text="✍ Изменить данные", callback_data="rename_task")],
+        [InlineKeyboardButton(text="🗑 Удалить задачу", callback_data="del_task")],
+        [InlineKeyboardButton(text="🚪 Назад", callback_data="view_tasks")]
     ])
 
     return ikb

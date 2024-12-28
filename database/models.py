@@ -43,4 +43,4 @@ class Tasks(Base):
     user_id: Mapped[int] = mapped_column(nullable=False)
     task_name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(Enum('Не выполнено', 'Выполнено', name='task_status'), default='Не выполнено')
+    status: Mapped[str] = mapped_column(Enum('🔴 Не выполнено', '🟢 Выполнено', name='task_status'), default='🔴 Не выполнено')

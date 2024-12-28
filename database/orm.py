@@ -163,6 +163,26 @@ class Database:
 
             await session.execute(query)
             await session.commit()
+            
+    @staticmethod
+    async def get_tasks_list(user_id: int):
+        async with async_session() as session:
+            query = select(Tasks).where(Tasks.user_id == user_id)
+
+            tasks = await session.execute(query)
+            tasks = tasks.scalars().all()
+            return tasks
+        
+    
+    @staticmethod
+    async def get_task(task_id: int):
+        async with async_session() as session:
+            query = select(Tasks).where(Tasks.id == task_id)
+
+            task = await session.execute(query)
+            task = task.scalar()
+            return task
+            
 
 
 
