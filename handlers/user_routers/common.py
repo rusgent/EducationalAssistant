@@ -182,8 +182,10 @@ async def get_shedule_and_give_num(message: Message, state: FSMContext, user_id:
 
 
 @common_router.message(Command('todo'))
-async def cmd_todo(message: Message):
+async def cmd_todo(message: Message, state: FSMContext):
     sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
     await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+    
+    await state.clear()
 
     await message.answer(text=TEXT_INFO_TREKER, reply_markup=inline_kb.get_todo_ikb())

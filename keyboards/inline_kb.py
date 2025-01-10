@@ -124,7 +124,10 @@ def get_menu_ikb():
         [InlineKeyboardButton(text="🗃 Расписание", callback_data="schedule")],
         [InlineKeyboardButton(text="🧠 Тест на профориентацию", callback_data="test")],
         [InlineKeyboardButton(text="🧮 Калькулятор оценок", callback_data="calc_marks")],
-        [InlineKeyboardButton(text="❓ Помощь", callback_data="help")]])
+        [InlineKeyboardButton(text="❓ Помощь", callback_data="help")],
+        [InlineKeyboardButton(text="📋 Трекер Задач", callback_data="todo")]
+        ]
+        )
 
     return keyboard
 
@@ -247,26 +250,69 @@ def get_tasks_list(tasks,page=0, tasks_per_page=5):
     for task in tasks_on_page:
         ikb.button(text=task.task_name, callback_data=f'task_{task.id}')
     
+    count_nav_buttons = 0
     if page > 0:
         ikb.button(text="⬅️", callback_data=f'tprev_{page-1}')
+        count_nav_buttons += 1
         
     if end < len(tasks):
         ikb.button(text="➡️", callback_data=f'tprev_{page+1}')
+        count_nav_buttons += 1
     
-    ikb.adjust(1, 1, 1, 1, 1)
-    
+    ikb.button(text="🚪 Меню", callback_data="menu")
+
+    task_count = len(tasks_on_page)
+
+    if count_nav_buttons > 0:
+        ikb.adjust(*([1] * task_count), count_nav_buttons, 1)
+    else:
+        ikb.adjust(*([1] * task_count), 1)
+
     return ikb.as_markup(resize_keyboard=True)
 
 
-def get_func_task_ikb():
+def get_func_task_ikb(task_id: int):
     ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
-        [InlineKeyboardButton(text="☑ Выполнено", callback_data="nice_task")],
-        [InlineKeyboardButton(text="✍ Изменить данные", callback_data="rename_task")],
-        [InlineKeyboardButton(text="🗑 Удалить задачу", callback_data="del_task")],
-        [InlineKeyboardButton(text="🚪 Назад", callback_data="view_tasks")]
+        [InlineKeyboardButton(text="✅ Выполнено", callback_data=f"finish_task_{task_id}")],
+        [InlineKeyboardButton(text="✍ Изменить данные", callback_data=f"edit_task_{task_id}")],
+        [InlineKeyboardButton(text="🗑 Удалить задачу", callback_data=f"del_task_{task_id}")],
+        [InlineKeyboardButton(text="🚪 Назад", callback_data=f"view_tasks_{task_id}")]
     ])
 
     return ikb
 
+
+def get_func_edit_task_ikb(task_id: int):
+    ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="Изменить название", callback_data=f"edit_taskname_{task_id}")],
+        [InlineKeyboardButton(text="Изменить описание", callback_data=f"edit_taskdescription_{task_id}")],
+        [InlineKeyboardButton(text="◀ Вернуться к задаче", callback_data=f"back_{task_id}")]
+    ])
+
+    return ikb
+
+
+def get_func_back_to_task(task_id: int):
+    ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="◀ Вернуться к задаче", callback_data=f"back_{task_id}")]
+    ])
+
+    return ikb
+
+
+def get_yes_or_no(task_id: int):
+    ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="🟢 Да", callback_data=f"yes_{task_id}"),
+        InlineKeyboardButton(text="🔴 Нет", callback_data=f"no_{task_id}")]
+    ])
+    
+    return ikb
+
+def exit_to_register_task():
+    ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Отменить", callback_data=f"exit_to_reg")]
+    ])
+    
+    return ikb
 
 

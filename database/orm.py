@@ -182,6 +182,42 @@ class Database:
             task = await session.execute(query)
             task = task.scalar()
             return task
+        
+    @staticmethod
+    async def edit_task_name(task_id: int, new_task_name: str):
+        async with async_session() as session:
+            query = update(Tasks).where(Tasks.id == task_id).values(
+                task_name=new_task_name
+            ).returning(Tasks)
+            res = await session.execute(query)
+            update_task = res.scalar()
+            await session.commit()
+            return update_task
+            
+    @staticmethod
+    async def edit_task_desc(task_id: int, new_task_desc: str):
+        async with async_session() as session:
+            query = update(Tasks).where(Tasks.id == task_id).values(
+                description=new_task_desc
+            ).returning(Tasks)
+            res = await session.execute(query)
+            update_task = res.scalar()
+            await session.commit()
+            return update_task
+        
+    @staticmethod
+    async def del_task(task_id: int):
+        async with async_session() as session:
+            query = select(Tasks).where(Tasks.id == task_id)
+            res = await session.execute(query)
+            task = res.scalar()
+            
+            if task:
+                await session.delete(task)
+                await session.commit()
+                return True
+            else:
+                return False
             
 
 

@@ -52,3 +52,6 @@ class MarksState(StatesGroup):
 class Task(StatesGroup):
     add_name_newtask = State()
     add_desc_newtask = State()
+    
+    edit_name_task = State()
+    edit_desc_task = State()
