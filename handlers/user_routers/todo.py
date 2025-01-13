@@ -73,25 +73,6 @@ async def give_desc_task(message: Message, state: FSMContext):
             text="❌ Описание задачи может быть только <b>ТЕКСТОМ</b>"
         )
         
-
-@todo_router.callback_query(F.data.startswith('no_reminder'), Task.add_reminder)
-async def no_reminder_cb(callback: CallbackQuery, state: FSMContext):
-    
-    data = await state.get_data()
-    task_name = data.get('task_name')
-    desc_task = data.get('desc_task')
-    
-    await callback.message.edit_text(
-        ("✅ Задача была успешно добавлена!\n\n"
-        f"<blockquote><b>Название задачи:</b> {task_name}\n"
-        f"<b>Описание:</b> {desc_task}</blockquote>")
-        )
-    
-    await Database.set_task(callback.message.from_user.id,
-                            task_name, desc_task)
-
-    
-        
         
 @todo_router.callback_query(F.data == 'exit_to_reg', StateFilter(Task.add_desc_newtask, Task.add_name_newtask))
 async def exit_to_register_task(callback: CallbackQuery, state: FSMContext):
