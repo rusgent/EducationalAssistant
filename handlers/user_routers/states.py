@@ -55,3 +55,5 @@ class Task(StatesGroup):
     
     edit_name_task = State()
     edit_desc_task = State()
+    
+    add_reminder = State()

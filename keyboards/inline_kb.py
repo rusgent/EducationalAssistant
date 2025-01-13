@@ -316,3 +316,11 @@ def exit_to_register_task():
     return ikb
 
 
+def get_yes_or_no_reminder():
+    ikb = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="🟢 Да", callback_data=f"yes_reminder"),
+        InlineKeyboardButton(text="🔴 Нет", callback_data=f"no_reminder")]
+    ])
+    
+    return ikb
+
