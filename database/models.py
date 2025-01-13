@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, DateTime, String, Text, Enum, func
+from sqlalchemy import JSON, DateTime, String, Text, Enum
 from datetime import datetime
 from typing import Annotated
 from sqlalchemy.orm import Mapped, mapped_column
@@ -45,10 +45,3 @@ class Tasks(Base):
     task_name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Enum('🔴 Не выполнено', '🟢 Выполнено', name='task_status'), default='🔴 Не выполнено')
-    reminder_time: Mapped[datetime] = mapped_column(nullable=True)
-    reminder_type: Mapped[str] = mapped_column(
-        Enum('once', 'daily', 'weekly', name='reminder_type'),
-        nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now()) 

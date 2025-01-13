@@ -55,19 +55,18 @@ async def give_desc_task(message: Message, state: FSMContext):
         task_name = data.get('task_name')
         desc_task = data.get('desc_task')
 
-#        await Database.set_task(message.from_user.id,
-#                                task_name, desc_task)
+        await Database.set_task(message.from_user.id,
+                                task_name, desc_task)
 
         TEXT = (
-            "❓ Хотите ли вы установить напоминание о задаче?\n\n"
+            f"✅ <b>Задача была успешно добавлена!</b>\n\n"
             f"<blockquote><b>Название задачи:</b> {task_name}\n"
-            f"<b>Описание:</b> {desc_task}</blockquote>"
+            f"<b>Описание:</b> {desc_task}</blockquote>\n\n"
         )
 
-        # await message.answer(TEXT, reply_markup=inline_kb.get_view_tasks_ikb())
-        await message.answer(TEXT, reply_markup=inline_kb.get_yes_or_no_reminder())
-        
-        await state.set_state(Task.add_reminder)
+        await message.answer(TEXT, reply_markup=inline_kb.get_view_tasks_ikb())
+
+        await state.clear()
 
     else:
         await message.answer(
