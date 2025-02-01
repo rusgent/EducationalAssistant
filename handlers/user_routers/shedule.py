@@ -60,7 +60,8 @@ async def give_lit(message: Message, state: FSMContext):
 
             res = res_cls = selected_class_num + selected_class_lit
 
-            if res_cls in ['9А', '9Б', '5А', '5Б', '5П', '10А', '10Б', '11А', '11Б']:
+            if res_cls in ['9А', '9Б', '5А', '5Б', '5П', '10А', '10Б', '11А', '11Б',
+                           '6А', '6Ш', '7А', '7Б', '8А', '8Б', '8В']:
 
                 await state.update_data(selected_class_num=selected_class_num, selected_class_lit=selected_class_lit)
                 res_text = f"📚 <b>Вы успешно выбрали класс {selected_class_num} «{selected_class_lit}» класс!</b>\n\n" \

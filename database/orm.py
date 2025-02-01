@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from aiogram import Bot
 from .db import async_engine, async_session
 from sqlalchemy import select, insert, update
@@ -139,7 +139,7 @@ class Database:
             query = insert(Results).values(
                 user_id=user_id,
                 result=result,
-                timestamp=datetime.datetime.now()
+                timestamp=datetime.now()
             )
             await session.execute(query)
             await session.commit()

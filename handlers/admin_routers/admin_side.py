@@ -1,11 +1,34 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
-from .__init__ import admin_router
-
+import os
 from aiogram.fsm.context import FSMContext
 from database.orm import Database
 from keyboards import inline_kb
+
+from aiogram.filters import BaseFilter
+from dotenv import load_dotenv
+from aiogram.types import Message
+import os
+import logging
+
+load_dotenv()
+logging.basicConfig(level=logging.INFO)
+
+admin_ids = [int(admin_id) for admin_id in os.getenv("ADMIN_IDS", "").split(",")]
+
+class IsAdmin(BaseFilter):
+    def __init__(self, admin_ids: list[int]):
+        self.admin_ids = admin_ids
+
+    async def __call__(self, message: Message) -> bool:
+        is_admin = message.from_user.id in self.admin_ids
+        return is_admin
+
+admin_ids = [int(admin_id) for admin_id in os.getenv("ADMIN_IDS", "").split(",")]
+
+admin_router = Router()
+admin_router.message.filter(IsAdmin(admin_ids))
 
 async def add_proxy_data(state: FSMContext, data: dict):
     # Получите текущее состояние данных

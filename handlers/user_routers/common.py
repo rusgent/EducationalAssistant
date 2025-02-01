@@ -146,7 +146,6 @@ async def cmd_view_results(message: Message):
 
 
     results_message = "<b>📋 Ваши предыдущие результаты:</b>\n\n"
-    print(rows)
     for row in rows:
         result, timestamp = row
         results_message += (

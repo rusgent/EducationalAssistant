@@ -2,7 +2,7 @@ import asyncio
 from aiogram import Dispatcher, Bot
 from aiogram.fsm.storage.memory import MemoryStorage
 from handlers.user_routers import user_router
-from handlers.admin_routers import admin_router
+from handlers.admin_routers.admin_side import admin_router
 from dotenv import load_dotenv
 import os
 from aiogram.client.default import DefaultBotProperties
