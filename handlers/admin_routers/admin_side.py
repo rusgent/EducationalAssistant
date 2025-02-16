@@ -81,3 +81,4 @@ async def view_users(message: Message):
             )
     else:
         await message.answer("❗ Пользователи не найдены в базе данных.")
+        

@@ -2,10 +2,10 @@ from sqlalchemy import JSON, DateTime, String, Text, Enum
 from datetime import datetime
 from typing import Annotated
 from sqlalchemy.orm import Mapped, mapped_column
-from .db import Base
+from sqlalchemy.orm import declarative_base
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
-
+Base = declarative_base()
 
 class Users(Base):
 
