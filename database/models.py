@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, DateTime, String, Text, Enum
+from sqlalchemy import JSON, DateTime, String, Text, Enum, func, BigInteger, VARCHAR
 from datetime import datetime
 from typing import Annotated
 from sqlalchemy.orm import Mapped, mapped_column
@@ -12,7 +12,7 @@ class Users(Base):
     __tablename__ = 'users'
 
     id: Mapped[intpk]
-    user_id: Mapped[int] = mapped_column(nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger,nullable=False)
     username: Mapped[str]
     fullname: Mapped[str]
     favcls: Mapped[dict] = mapped_column(JSON)
@@ -23,9 +23,9 @@ class Results(Base):
     __tablename__ = 'results'
 
     id: Mapped[intpk]
-    user_id: Mapped[int] = mapped_column(nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger,nullable=False)
     result: Mapped[str]
-    timestamp: Mapped[DateTime] = mapped_column(DateTime, default='CURRENT_TIMESTAMP')
+    timestamp: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
 
 
 class SchoolShedule(Base):
@@ -41,7 +41,7 @@ class Tasks(Base):
     __tablename__ = 'tasks'
 
     id: Mapped[intpk]
-    user_id: Mapped[int] = mapped_column(nullable=False)
-    task_name: Mapped[str] = mapped_column(Text)
-    description: Mapped[str] = mapped_column(Text)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    task_name: Mapped[str]
+    description: Mapped[str]
     status: Mapped[str] = mapped_column(Enum('🔴 Не выполнено', '🟢 Выполнено', name='task_status'), default='🔴 Не выполнено')

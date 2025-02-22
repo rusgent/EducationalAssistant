@@ -73,7 +73,7 @@ async def menu_ikb(callback: CallbackQuery, state: FSMContext):
 async def cmd_favorites(message: Message, state: FSMContext):
 
     await state.clear()
-    send_message = await message.answer(text="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    send_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
 
     await message.bot.delete_message(chat_id=message.chat.id, message_id=send_message.message_id)
 

@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, Asyn
 
 load_dotenv()
 
+DATABASE_URL = os.getenv("DB_URL_POSTGRES")
 
 async_engine = create_async_engine(
-    url=f'{os.getenv("DB_URL")}'
+    url=DATABASE_URL
 )
 
 async_session = async_sessionmaker(

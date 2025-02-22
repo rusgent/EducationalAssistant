@@ -147,7 +147,7 @@ async def edit_task(callback: CallbackQuery):
 async def edit_func_task(callback: CallbackQuery, state: FSMContext):
     _, func, task_id = callback.data.split('_')
     
-    task = await Database.get_task(task_id=task_id)
+    task = await Database.get_task(task_id=int(task_id))
     await state.update_data(task=task)
     
     if func == 'taskname':
@@ -177,7 +177,8 @@ async def edit_task_name(message: Message, state: FSMContext):
         task = data.get('task')
         
         new_task_name = message.text
-        upd_task = await Database.edit_task_name(task_id=task.id, new_task_name=new_task_name)
+        print(int(task.id))
+        upd_task = await Database.edit_task_name(task_id=int(task.id), new_task_name=new_task_name)
         
         TEXT = (f'<b>✅ Название задачи успешно изменено!</b>\n\n'
         f'<blockquote><b>Название - <i>{upd_task.task_name}</i></b>\n'
@@ -227,7 +228,7 @@ async def del_yes_or_no_task(callback: CallbackQuery):
 @todo_router.callback_query(F.data.startswith('yes_'))
 async def yes_del_task(callback: CallbackQuery, state: FSMContext):
     _, task_id = callback.data.split('_')
-    task_del = await Database.del_task(task_id=task_id)
+    task_del = await Database.del_task(task_id=int(task_id))
     if task_del:
     
         TEXT = (f'🗑Задача успешно была удалена!')
@@ -254,7 +255,7 @@ async def yes_del_task(callback: CallbackQuery, state: FSMContext):
 async def no_del_task(callback: CallbackQuery, state: FSMContext):
     _, task_id = callback.data.split('_')
     
-    task = await Database.get_task(task_id=task_id)
+    task = await Database.get_task(task_id=int(task_id))
     await state.update_data(task=task)
 
     TEXT = (f'Ваша задача\n'
@@ -270,7 +271,7 @@ async def no_del_task(callback: CallbackQuery, state: FSMContext):
 @todo_router.callback_query(F.data.startswith('finish_task_'))
 async def finish_task(callback: CallbackQuery, state: FSMContext):
     task_id = callback.data.split('_')[2]
-    responce = await Database.del_task(task_id)
+    responce = await Database.del_task(int(task_id))
     if responce:
         await callback.answer(text=('C успешным выполнением задачи 🥳\n'
                                     'Продолжай в том духе духе!'), show_alert=True)
