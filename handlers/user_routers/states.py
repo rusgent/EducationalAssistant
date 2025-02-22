@@ -55,3 +55,9 @@ class Task(StatesGroup):
     
     edit_name_task = State()
     edit_desc_task = State()
+    
+
+class SendMenu(StatesGroup):
+    wait_photo = State()
+    wait_yes = State()
+    
