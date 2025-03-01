@@ -31,6 +31,22 @@ class Database:
             list_users = result.scalars().all()
             return list_users
             # [ОбьектЮзер1.id]
+    
+    
+    @staticmethod
+    async def del_user(user_id: int):
+        async with async_session() as session:
+            query = select(Users).where(Users.user_id == user_id)
+            res = await session.execute(query)
+            user = res.scalar()
+            
+            if user:
+                await session.delete(user)
+                await session.commit()
+                return True
+            else:
+                return False
+            
 
     @staticmethod
     async def get_shedule_for_cls(cls: str):
@@ -218,7 +234,7 @@ class Database:
                 return True
             else:
                 return False
-            
+        
 
 
 

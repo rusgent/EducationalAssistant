@@ -1,7 +1,9 @@
 from aiogram import Router, F, Bot
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
+import datetime
 from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
+from pdf2image import convert_from_bytes
 import asyncio
 import os
 from handlers.user_routers.states import *
@@ -68,6 +70,15 @@ async def cmd_test(message: Message):
                         "⚡ <b>Спеши, пока не поздно!</b> После 12ти бот уходит на отдых 😏\n\n"
                         "<i>🔧 Мы уже работаем над возможностью отключать рассылку меню по вашим запросам. Скоро будет доступно!</i>"
                     ))
+        
+@admin_router.message(Command('del'))
+async def cmd_del_user(message: Message, command: CommandObject):
+    user_id = int(command.args)
+    a = await Database.del_user(user_id)
+    if a:
+        await message.answer(f"✅✅✅ Пользователь \nID: {user_id} заблокировал бота и он был успешно удален из БД.")
+    else:
+        await message.answer(f"❌ НЕ УДАЛОСЬ!!!! Пользователь \nID: {user_id} заблокировал бота и он НЕ был успешно удален из БД.")
 
 
 @admin_router.message(Command("view_users"))
@@ -100,6 +111,23 @@ async def view_users(message: Message):
     else:
         await message.answer("❗ Пользователи не найдены в базе данных.")
         
+        
+ # Функция для получения PDF-файла в память
+def download_pdf_in_memory(pdf_url):
+    response = requests.get(pdf_url)
+    if response.status_code == 200:
+        return response.content
+    return None
+
+
+# Функция для конвертации PDF в изображение из памяти
+def pdf_to_image_from_bytes(pdf_bytes):
+    images = convert_from_bytes(pdf_bytes)
+    # Конвертируем первую страницу в изображение
+    img_io = BytesIO()
+    images[0].save(img_io, 'PNG')
+    img_io.seek(0)
+    return img_io
 
 
 @admin_router.message(Command('find_menu'))
@@ -108,23 +136,6 @@ async def cmd_find_menu(message: Message, state: FSMContext):
     url = "https://moausoch3buraevo.02edu.ru/meal/menu/"
 
     responce = requests.get(url)
-
-# # Функция для получения PDF-файла в память
-# def download_pdf_in_memory(pdf_url):
-#     response = requests.get(pdf_url)
-#     if response.status_code == 200:
-#         return response.content
-#     return None
-
-
-# # Функция для конвертации PDF в изображение из памяти
-# def pdf_to_image_from_bytes(pdf_bytes):
-#     images = convert_from_bytes(pdf_bytes)
-#     # Конвертируем первую страницу в изображение
-#     img_io = BytesIO()
-#     images[0].save(img_io, 'PNG')
-#     img_io.seek(0)
-#     return img_io
 
     if responce.status_code == 200:
         soup = BeautifulSoup(responce.text, 'html.parser')
@@ -136,7 +147,7 @@ async def cmd_find_menu(message: Message, state: FSMContext):
             res_url = quote(pdf_url, safe=':/')
             await state.update_data({"data": data.text.strip()})
             if res_url:
-                await message.answer(f'Дата - {data.text.strip()}\nСсылка на PDF-меню - {res_url}')
+                await message.answer(f'Сегодняшняя Дата - {datetime.datetime.now().strftime("%Y-%m-%d")}\nДата - {data.text.strip()}\nСсылка на PDF-меню - {res_url}')
                 await state.set_state(SendMenu.wait_photo)
             else:
                 await message.answer(f'Я не нашел меню!!!')
@@ -155,6 +166,7 @@ async def get_photo(message: Message, state: FSMContext):
         await message.answer_photo(
                     photo=photo_id,
                     caption=(f"<b><blockquote>Меню на {date}</blockquote></b>\n"
+                             "🔥 <b>Внимание! Бот отключится в 00:00!</b> 🔥\n\n"
                     "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n"
                     "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
                     "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!\n\n"
@@ -183,6 +195,7 @@ async def send_menu_users(message: Message, state: FSMContext, bot: Bot):
                     chat_id=user.user_id,
                     photo=photo_id,
                     caption=(f"<b><blockquote>Меню на {date}</blockquote></b>\n"
+                             "🔥 <b>Внимание! Бот отключится в 00:00!</b> 🔥\n\n"
                     "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n"
                     "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
                     "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!\n\n"
@@ -207,7 +220,11 @@ async def send_menu_users(message: Message, state: FSMContext, bot: Bot):
 
             except TelegramForbiddenError:
                 failed_count += 1
-                await bot.send_message(1006706663, f"❌ Пользователь \nID: {user.user_id}\nUsername: @{user.username}\nИмя: {user.fullname}\n заблокировал бота.")
+                a = await Database.del_user(int(user.user_id))
+                if a:
+                    await bot.send_message(1006706663,f"⚠⚠⚠ Пользователь \nID: {user.user_id}\nUsername: @{user.username}\nИмя: {user.fullname} заблокировал бота и он был успешно удален из БД.")
+                else:
+                    await bot.send_message(1006706663,f"❌ НЕ УДАЛОСЬ!!!! Пользователь \nID: {user.user_id} заблокировал бота и он НЕ был успешно удален из БД.")
                 
             except TelegramRetryAfter as e:
                 await bot.send_message(1006706663, f"⏳ Превышен лимит запросов! Жду {e.retry_after} сек.")
