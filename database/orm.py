@@ -235,6 +235,53 @@ class Database:
             else:
                 return False
         
+    @staticmethod
+    async def edit_school_menu_id(menu_id: int, date: str):
+        async with async_session() as session:
+            query = update(Menu).where(Menu.id == 1).values(
+                menu_id=menu_id,
+                date=date
+            )
+            res = await session.execute(query)
+            await session.commit()
+        
+    @staticmethod
+    async def get_school_menu_id():
+        async with async_session() as session:
+            query = select(Menu)
+            res = await session.execute(query)
+            menu = res.scalar()
+
+            if menu:
+                return menu
+            else:
+                return False
+            
+    @staticmethod
+    async def check_school_notif_menu(user_id: int):
+        async with async_session() as session:
+            query = select(Users.is_notif).where(Users.user_id == user_id)
+            res = await session.execute(query)
+            is_notif = res.scalar()
+            return str(is_notif)
+        
+    @staticmethod
+    async def edit_vkl_school_notif_menu(user_id: int):
+        async with async_session() as session:
+            query = update(Users).where(Users.user_id == user_id).values(
+                is_notif=1
+            )
+            res = await session.execute(query)
+            await session.commit()
+            
+    @staticmethod
+    async def edit_otkl_school_notif_menu(user_id: int):
+        async with async_session() as session:
+            query = update(Users).where(Users.user_id == user_id).values(
+                is_notif=0
+            )
+            res = await session.execute(query)
+            await session.commit()
 
 
 

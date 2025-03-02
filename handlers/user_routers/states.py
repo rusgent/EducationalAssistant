@@ -60,4 +60,7 @@ class Task(StatesGroup):
 class SendMenu(StatesGroup):
     wait_photo = State()
     wait_yes = State()
+
+    wait_photo_to_bd = State()
+    wait_yes_to_bd = State()
     

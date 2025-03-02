@@ -56,7 +56,8 @@ async def cmd_admin_panel(message: Message):
         "🔐 <b>Админ-панель</b> 🔐\n\n"
         "Выберите одну из доступных команд:\n\n"
         "📋 <b>/view_users</b> — Просмотреть всех пользователей\n"
-        "/find_menu - Найти меню"
+        "/find_menu - Найти меню\n"
+        '/upd_menu_bd - Обновить БД'
     )
     await message.answer(ADMIN_PANEL_TEXT, parse_mode="HTML")
     
@@ -129,6 +130,44 @@ def pdf_to_image_from_bytes(pdf_bytes):
     img_io.seek(0)
     return img_io
 
+@admin_router.message(Command('upd_menu_bd'))
+async def cmd_upd_menu(message: Message, state: FSMContext):
+    await message.answer(f'Ушел искать меню для обновления в бд, скоро вернусь босс!')
+    url = "https://moausoch3buraevo.02edu.ru/meal/menu/"
+
+    responce = requests.get(url)
+
+    if responce.status_code == 200:
+        soup = BeautifulSoup(responce.text, 'html.parser')
+
+        pdf_link = soup.find('a', class_='mr-1 sf-link sf-link-theme sf-link-dashed')
+        data = soup.find('h3', class_="t-1 mt-4")
+        if pdf_link and 'href' in pdf_link.attrs and data:
+            pdf_url = urljoin(url, pdf_link['href'])
+            res_url = quote(pdf_url, safe=':/')
+            await state.update_data({"data": data.text.strip()})
+            if res_url:
+                await message.answer(f'Дата - {data.text.strip()}\nСсылка на PDF-меню - {res_url}')
+                await state.set_state(SendMenu.wait_photo_to_bd)
+            else:
+                await message.answer(f'Я не нашел меню!!!')
+        else:
+            await message.answer(f'Я не нашел меню!!!')
+
+    else:
+        await message.answer(f'Я не нашел меню!!!')
+
+@admin_router.message(SendMenu.wait_photo_to_bd)
+async def get_photo_to_upd_meu(message: Message, state: FSMContext):
+    if message.photo:
+        photo_id = message.photo[-1].file_id
+        data = await state.get_data()
+        date = data.get('data')
+        await Database.edit_school_menu_id(photo_id, date=date)
+        await message.answer((f"✅ Запись в БД успешно записана\n"
+                               f"Photo_id - {photo_id}\n"
+                               f"Date - {date}"))
+
 
 @admin_router.message(Command('find_menu'))
 async def cmd_find_menu(message: Message, state: FSMContext):
@@ -165,13 +204,13 @@ async def get_photo(message: Message, state: FSMContext):
         date = data.get('data')
         await message.answer_photo(
                     photo=photo_id,
-                    caption=(f"<b><blockquote>Меню на {date}</blockquote></b>\n"
-                             "🔥 <b>Внимание! Бот отключится в 00:00!</b> 🔥\n\n"
-                    "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n"
-                    "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
-                    "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!\n\n"
-                    "<i>Администрация бота желает вам продуктивной недели 😊</i>")
-                    )
+                    caption=(f"<b><blockquote>Меню на {date}</blockquote></b>\n\n"
+                        "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n"
+                        "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
+                        "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!\n\n"
+                        "❗️ Вы можете включить/отключить авто-отправку меню с помощью команды - /notif_menu ❗️\n"
+                        "<i>Администрация бота желает вам продуктивной недели 😊</i>")
+                        )
         await message.answer_photo(photo=photo_id, caption='Вы желаете данную фотографию разослать всем юзерам?')
         await state.update_data(photo_id=photo_id)
         await state.set_state(SendMenu.wait_yes)
@@ -180,64 +219,75 @@ async def get_photo(message: Message, state: FSMContext):
 async def send_menu_users(message: Message, state: FSMContext, bot: Bot):
     failed_count = 0
     success_count = 0
+    zabl_count = 0
     if message.text == '1':
         data = await state.get_data()
         photo_id = data.get('photo_id')
         date = data.get('data')
+        await Database.edit_school_menu_id(photo_id, date=date)
+        await message.answer((f"✅ Запись в БД успешно записана\n"
+                               f"Photo_id - {photo_id}\n"
+                               f"Date - {date}"))
+        
         users_list = await Database.get_all_users()
             
         for user in users_list:
             user_info = (f"ID: {user.user_id}\n"
                          f"Username: @{user.username}\n"
                          f"Имя: {user.fullname}")
-            try:
-                await bot.send_photo(
-                    chat_id=user.user_id,
-                    photo=photo_id,
-                    caption=(f"<b><blockquote>Меню на {date}</blockquote></b>\n"
-                             "🔥 <b>Внимание! Бот отключится в 00:00!</b> 🔥\n\n"
-                    "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n"
-                    "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
-                    "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!\n\n"
-                    "<i>Администрация бота желает вам продуктивной недели 😊</i>")
-                    )
+            if int(user.is_notif) == 1:
+                try:
+                    await bot.send_photo(
+                        chat_id=user.user_id,
+                        photo=photo_id,
+                        caption=(f"<b><blockquote>Меню на {date}</blockquote></b>\n\n"
+                        "<a href='https://t.me/botdevrus'>💬 Связаться с техподдержкой</a>\n"
+                        "💡 <b>Мы всегда открыты к вашим идеям и предложениям!</b> Если у вас есть идеи, как сделать бота ещё лучше, "
+                        "пожалуйста, поделитесь ими с нами — мы рады слышать ваше мнение!\n\n"
+                        "❗️ Вы можете включить/отключить авто-отправку меню с помощью команды - /notif_menu ❗️\n"
+                        "<i>Администрация бота желает вам продуктивной недели 😊</i>")
+                        )
 
-                # await bot.send_message(
-                # chat_id=user.user_id,
-                # text = (
-                #         "🔥 <b>Внимание! Бот отключится в 00:00!</b> 🔥\n\n"
-                #         "⏳ Время на исходе! Успей протестировать новые функции, пока бот ещё работает.\n\n"
-                #         "🚀 <b>Что нового?</b> Заходи в <b>меню (/menu) </b>, выбирай раздел и пробуй сам!\n\n"
-                #         "⚡ <b>Спеши, пока не поздно!</b> После 12ти бот уходит на отдых 😏\n\n"
-                #         "<i>🔧 Мы уже работаем над возможностью отключать рассылку меню по вашим запросам. Скоро будет доступно!</i>"
-                #     ))
+                    # await bot.send_message(
+                    # chat_id=user.user_id,
+                    # text = (
+                    #         "🔥 <b>Внимание! Бот отключится в 00:00!</b> 🔥\n\n"
+                    #         "⏳ Время на исходе! Успей протестировать новые функции, пока бот ещё работает.\n\n"
+                    #         "🚀 <b>Что нового?</b> Заходи в <b>меню (/menu) </b>, выбирай раздел и пробуй сам!\n\n"
+                    #         "⚡ <b>Спеши, пока не поздно!</b> После 12ти бот уходит на отдых 😏\n\n"
+                    #         "<i>🔧 Мы уже работаем над возможностью отключать рассылку меню по вашим запросам. Скоро будет доступно!</i>"
+                    #     ))
 
 
-                await asyncio.sleep(0.7)
-                await bot.send_message(1006706663, f"✅ Успешно отправлено:\n{user_info}")
-                success_count += 1
-                await asyncio.sleep(0.7)  # Интервал между отправками
+                    await asyncio.sleep(0.7)
+                    await bot.send_message(1006706663, f"✅ Успешно отправлено:\n{user_info}")
+                    success_count += 1
+                    await asyncio.sleep(0.7)  # Интервал между отправками
 
-            except TelegramForbiddenError:
-                failed_count += 1
-                a = await Database.del_user(int(user.user_id))
-                if a:
-                    await bot.send_message(1006706663,f"⚠⚠⚠ Пользователь \nID: {user.user_id}\nUsername: @{user.username}\nИмя: {user.fullname} заблокировал бота и он был успешно удален из БД.")
-                else:
-                    await bot.send_message(1006706663,f"❌ НЕ УДАЛОСЬ!!!! Пользователь \nID: {user.user_id} заблокировал бота и он НЕ был успешно удален из БД.")
-                
-            except TelegramRetryAfter as e:
-                await bot.send_message(1006706663, f"⏳ Превышен лимит запросов! Жду {e.retry_after} сек.")
-                await asyncio.sleep(e.retry_after)  # Ждём, если превысили лимит запросов
-                
-            except Exception as e:
-                failed_count += 1
-                await bot.send_message(1006706663, f"⚠ Ошибка при отправке пользователю \nID: {user.user_id}\nUsername: @{user.username}\nИмя: {user.fullname}: {e}")
+                except TelegramForbiddenError:
+                    failed_count += 1
+                    a = await Database.del_user(int(user.user_id))
+                    if a:
+                        await bot.send_message(1006706663,f"⚠⚠⚠ Пользователь \nID: {user.user_id}\nUsername: @{user.username}\nИмя: {user.fullname} заблокировал бота и он был успешно удален из БД.")
+                    else:
+                        await bot.send_message(1006706663,f"❌ НЕ УДАЛОСЬ!!!! Пользователь \nID: {user.user_id} заблокировал бота и он НЕ был успешно удален из БД.")
+                    
+                except TelegramRetryAfter as e:
+                    await bot.send_message(1006706663, f"⏳ Превышен лимит запросов! Жду {e.retry_after} сек.")
+                    await asyncio.sleep(e.retry_after)  # Ждём, если превысили лимит запросов
+                    
+                except Exception as e:
+                    failed_count += 1
+                    await bot.send_message(1006706663, f"⚠ Ошибка при отправке пользователю \nID: {user.user_id}\nUsername: @{user.username}\nИмя: {user.fullname}: {e}")
+            elif int(user.is_notif) == 0:
+                zabl_count += 1
 
             # Сообщаем админу итог рассылки
         await bot.send_message(1006706663, f"✅ Рассылка завершена!\n"
                                             f"✔ Успешно: {success_count}\n"
-                                            f"❌ Ошибок: {failed_count}")
+                                            f"❌ Ошибок: {failed_count}\n"
+                                            f"Откл рассылку {zabl_count}")
+
         await state.clear()
     elif message.text == '0':
         await state.clear()

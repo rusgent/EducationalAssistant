@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, DateTime, String, Text, Enum, func, BigInteger, VARCHAR
+from sqlalchemy import JSON, DateTime, String, Text, Enum, func, BigInteger, VARCHAR, Integer
 from datetime import datetime
 from typing import Annotated
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,7 +15,8 @@ class Users(Base):
     user_id: Mapped[int] = mapped_column(BigInteger,nullable=False)
     username: Mapped[str]
     fullname: Mapped[str]
-    favcls: Mapped[dict] = mapped_column(JSON)
+    favcls: Mapped[dict] = mapped_column(JSON, default=[])
+    is_notif: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class Results(Base):
@@ -45,3 +46,10 @@ class Tasks(Base):
     task_name: Mapped[str]
     description: Mapped[str]
     status: Mapped[str] = mapped_column(Enum('🔴 Не выполнено', '🟢 Выполнено', name='task_status'), default='🔴 Не выполнено')
+    
+class Menu(Base):
+    __tablename__ = 'menu'
+    
+    id: Mapped[intpk]
+    menu_id: Mapped[str]
+    date: Mapped[str]

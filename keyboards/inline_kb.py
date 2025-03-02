@@ -125,7 +125,8 @@ def get_menu_ikb():
         [InlineKeyboardButton(text="🧠 Тест на профориентацию", callback_data="test")],
         [InlineKeyboardButton(text="🧮 Калькулятор оценок", callback_data="calc_marks")],
         [InlineKeyboardButton(text="❓ Помощь", callback_data="help")],
-        [InlineKeyboardButton(text="📋 Трекер Задач", callback_data="todo")]
+        [InlineKeyboardButton(text="📋 Трекер задач", callback_data="todo")],
+        [InlineKeyboardButton(text="🍴 Меню столовой", callback_data="school_menu")]
         ]
         )
 
@@ -314,3 +315,15 @@ def exit_to_register_task():
     ])
     
     return ikb
+
+def get_vkl_menu():
+    keyboard = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Включить", callback_data="school_menu_vkl")]])
+
+    return keyboard
+
+def get_otkl_menu():
+    keyboard = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Отключить", callback_data="school_menu_otkl")]])
+
+    return keyboard
