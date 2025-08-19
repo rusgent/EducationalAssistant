@@ -24,7 +24,16 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     )
 
     await message.answer_photo(caption=WELCOME_TEXT.format(full_name=message.from_user.full_name), photo='https://i.imgur.com/m72muS3.jpeg', reply_markup=ReplyKeyboardRemove())
-    await message.answer(MENU_TEXT, parse_mode='HTML', reply_markup=inline_kb.get_menu_ikb())
+
+    user = await Database.check_in_premium_users_table(message.from_user.id)
+    
+    if not user:
+        await message.answer(TEXT_START_PREM.format(user_id=message.from_user.id))
+
+    check_prem = await Database.check_premium(message.from_user.id)
+
+    if user and check_prem == 2:
+        await message.answer(MENU_TEXT, parse_mode='HTML', reply_markup=inline_kb.get_menu_ikb())
 
 
 @common_router.message(Command('menu'))
@@ -32,6 +41,10 @@ async def cmd_menu(message: Message, state: FSMContext):
 
     sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
     await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+    
+    await Database.check_and_update_username_prem_table(message.from_user.id,
+                                                        message.from_user.username,
+                                                        message.from_user.full_name)
 
     await state.clear()
 

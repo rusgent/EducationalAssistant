@@ -73,7 +73,7 @@ class PremiumUsers(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     username: Mapped[str]
     fullname: Mapped[str]
-    premium_end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    premium_end_date: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
     school_id: Mapped[int] = mapped_column(ForeignKey("schools.id"), nullable=True)
     favcls: Mapped[dict] = mapped_column(JSON, default=[])
     is_notif: Mapped[int] = mapped_column(Integer, default=1)

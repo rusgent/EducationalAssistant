@@ -31,6 +31,14 @@ class Database:
             list_users = result.scalars().all()
             return list_users
             # [ОбьектЮзер1.id]
+            
+    @staticmethod
+    async def get_all_prem_users():
+        async with async_session() as session:
+            query = select(PremiumUsers)
+            res = await session.execute(query)
+            list_prem_users = res.scalars().all()
+            return list_prem_users
     
     
     @staticmethod
@@ -51,7 +59,7 @@ class Database:
     @staticmethod
     async def get_shedule_for_cls(cls: str):
         async with async_session() as session:
-            query = select(SchoolShedule.lessons).where(SchoolShedule.cls_rus == cls)
+            query = select(SchoolSchedule.lessons).where(SchoolSchedule.cls_rus == cls)
             result = await session.execute(query)
             lessons = result.scalar()
             if lessons:
@@ -86,6 +94,30 @@ class Database:
                                            fullname=fullname))
                     await session.execute(update_user)
             await session.commit()
+            
+            
+    @staticmethod
+    async def check_and_update_username_prem_table(user_id: int, new_username: str, new_fullname: str):
+        async with async_session() as session:
+            query = select(PremiumUsers.username).where(PremiumUsers.tg_id == user_id)
+            old_username = session.execute(query)
+            if new_username != old_username:
+                query = (update(PremiumUsers)
+                         .where(PremiumUsers.tg_id == user_id)
+                         .values(username=new_username,
+                                 fullname=new_fullname))
+            await session.commit()
+
+
+    @staticmethod
+    async def check_user(user_id: int):
+        async with async_session() as session:
+            query = select(Users).where(Users.user_id == user_id)
+            res = await session.execute(query)
+            user = res.scalar()
+            return user
+
+
 
     @staticmethod
     async def set_favcls(user_id: int, favcls: str):
@@ -144,7 +176,7 @@ class Database:
     @staticmethod
     async def get_cls_list():
         async with async_session() as session:
-            query = select(SchoolShedule.cls_rus)
+            query = select(SchoolSchedule.cls_rus)
             res = await session.execute(query)
             res = res.scalars() # [9а, 9б]
             return res
@@ -282,6 +314,72 @@ class Database:
             )
             res = await session.execute(query)
             await session.commit()
+            
+    @staticmethod
+    async def check_in_premium_users_table(user_id: int):
+        async with async_session() as session:
+            query = select(PremiumUsers).where(PremiumUsers.tg_id == user_id)
+            res = await session.execute(query)
+            user = res.scalar()
+            
+            return user
+
+    @staticmethod
+    async def check_premium(user_id: int):
+        async with async_session() as session:
+            query = select(PremiumUsers.premium_end_date).where(PremiumUsers.tg_id == user_id)
+            res_date = (await session.execute(query)).scalar()
+            
+            # 2 - Подписка Активна
+            # 1 - Сегодня полс день
+            # 0 - Истекла
+            today = datetime.now().date() 
+            if res_date:
+                if today < res_date:
+                    return 2
+                elif today == res_date:
+                    return 1
+            else:
+                return 0
+            
+    @staticmethod
+    async def add_new_prem_user(user_id, username, fullname, premium_end_date, bot: Bot, money, days):
+        async with async_session() as session:
+            insert_new_user = insert(PremiumUsers).values(
+                    tg_id=user_id,
+                    username=username,
+                    fullname=fullname,
+                    premium_end_date=premium_end_date
+                    )
+            
+            result = await session.execute(insert_new_user)
+            users = await Database.get_all_prem_users()
+            count_prem_user = len(users) + 1
+                
+            await bot.send_message(chat_id=os.getenv("RUS_ID"), text=(f'Новый пользователь активировал подписку за {money} рублей на {days} дней!\n'
+                                                                      f'ID - {user_id}\n@{username}\n'
+                                                                      f'fullname - {fullname}\n\n'
+                                                                      f'Всего уже {count_prem_user} премиум-пользователей!'))
+            
+            await session.commit()
+            
+            
+    @staticmethod
+    async def del_prem_user(user_id):
+        async with async_session() as session:
+            query = select(PremiumUsers).where(PremiumUsers.tg_id == user_id)
+            res = await session.execute(query)
+            user = res.scalar()
+            
+            if user:
+                await session.delete(user)
+                await session.commit()
+                return True
+            else:
+                return False
+    
+
+    
 
 
 

@@ -1,11 +1,12 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import Command, CommandObject
 import datetime
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
 from pdf2image import convert_from_bytes
 import asyncio
 import os
+import html
 from handlers.user_routers.states import *
 from aiogram.fsm.context import FSMContext
 from database.orm import Database
@@ -19,6 +20,10 @@ from dotenv import load_dotenv
 from aiogram.types import Message
 import os
 import logging
+from datetime import datetime, timedelta
+
+import handlers.admin_routers.keyboards as kb
+from handlers.admin_routers.states import *
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -51,7 +56,8 @@ async def add_proxy_data(state: FSMContext, data: dict):
 
 
 @admin_router.message(Command("ad"))
-async def cmd_admin_panel(message: Message):
+async def cmd_admin_panel(message: Message, state: FSMContext):
+    await state.clear()
     """Панель администратора для доступа к функциям управления"""
     ADMIN_PANEL_TEXT = (
         "🔐 <b>Админ-панель</b> 🔐\n\n"
@@ -60,9 +66,206 @@ async def cmd_admin_panel(message: Message):
         "/find_menu - Найти меню\n"
         '/upd_menu_bd - Обновить БД'
     )
-    await message.answer(ADMIN_PANEL_TEXT, parse_mode="HTML")
+    sent_message = await message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+    await message.answer(ADMIN_PANEL_TEXT, parse_mode="HTML", reply_markup=kb.ikb_menu)
     
+@admin_router.callback_query(F.data == 'go_back_admin_panel')
+async def cb_admin_panel(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    """Панель администратора для доступа к функциям управления"""
+    ADMIN_PANEL_TEXT = (
+        "🔐 <b>Админ-панель</b> 🔐\n\n"
+        "Выберите одну из доступных команд:\n\n"
+        "📋 <b>/view_users</b> — Просмотреть всех пользователей\n"
+        "/find_menu - Найти меню\n"
+        '/upd_menu_bd - Обновить БД'
+    )
+    sent_message = await callback.message.answer_sticker(sticker="CAACAgIAAxkBAAENXKZnZb7qQc48z8cCp6jlLOVZo8WznQACQQEAAs0bMAjx8GIY3_aWWDYE", reply_markup=ReplyKeyboardRemove())
+    await callback.message.bot.delete_message(chat_id=callback.message.chat.id, message_id=sent_message.message_id)
+    await callback.message.answer(ADMIN_PANEL_TEXT, parse_mode="HTML", reply_markup=kb.ikb_menu)
+    await callback.answer()
     
+@admin_router.callback_query(F.data == 'add_new_prem_user')
+async def add_new_prem_user(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer('❓ Отправь ID юзера, которому нужно АКТИВИРОВАТЬ', reply_markup=kb.ikb_back_menu)
+    await state.set_state(AddNewPrem.wait_send_id)
+    await callback.answer()
+    
+@admin_router.message(AddNewPrem.wait_send_id)
+async def give_id_new_prem_user(message: Message, state: FSMContext):
+    await state.update_data(user_id=message.text)
+    await message.answer('❓ Отправь сколько он тебе перевел', reply_markup=kb.kb_money_20)
+    await state.set_state(AddNewPrem.wait_send_money)
+
+@admin_router.message(AddNewPrem.wait_send_money)
+async def give_money_new_prem_user(message: Message, state: FSMContext):
+    await state.update_data(money=message.text)
+    await state.update_data(days=(int(message.text)/20)*30)
+
+    data = await state.get_data()
+    money = data['money']
+    user_id = data['user_id']
+    days = data['days']
+
+    user = await Database.check_user(int(user_id))
+    user_prem = await Database.check_in_premium_users_table(int(user_id))
+    
+    if not user:
+        await message.answer(f'❌ Данный пользователь был не найден в базе данных!\nID - {user_id}', reply_markup=kb.ikb_back_menu)
+        
+    elif user_prem:
+        await message.answer((f'❌ У данного пользователя {user_prem.fullname} уже активирована премка!\n'
+                              f'ID - {user_prem.tg_id} | @{user_prem.username}\n\n'
+                              f'Подписка активна до {(user_prem.premium_end_date).strftime("%d.%m.%Y")}'),
+                             reply_markup=kb.ikb_back_menu)
+        
+    
+    else:
+        await message.answer((f'🚩 Пользователь {user.fullname} был успешно найден!\n'
+                              f'ID - {user.user_id} | @{user.username}\n\n'
+                              f'Подписка будет активна до {(datetime.now() + timedelta(int(days))).date().strftime("%d.%m.%Y")}'),
+                             reply_markup=kb.ikb_yes_no)
+        
+@admin_router.callback_query(F.data.startswith('res_'))
+async def cb_yes_no(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    a, res = callback.data.split('_')
+
+    if res == 'yes':
+            data = await state.get_data()
+            money = int(data['money'])
+            user_id = int(data['user_id'])
+            days = int(data['days'])
+
+            user = await Database.check_user(int(user_id))
+            if user:
+                await callback.message.answer((f'✅ Пользователю {user.fullname} была УСПЕШНО ВЫДАНА ПРЕМКА!\n'
+                                    f'ID - {user.user_id} | @{user.username}\n\n'
+                                    f'Подписка будет активна до {(datetime.now() + timedelta(int(days))).date().strftime("%d.%m.%Y")}'),
+                                    reply_markup=kb.ikb_menu)
+
+                await Database.add_new_prem_user(user_id, user.username, user.fullname,
+                                                (datetime.now() + timedelta(int(days))).date(),
+                                                bot, money, days)
+
+                await bot.send_message(chat_id=user_id,text = (
+                                            f"<b>🎉 Ура! Ваша подписка активирована на {days} дней до {(datetime.now() + timedelta(int(days))).date().strftime('%d.%m.%Y')} за {money} рублей!\n\n</b>"
+                                            "Теперь тебе доступны все возможности нашего школьного помощника:\n"
+                                            "<i>📚 Удобное расписание\n"
+                                            "🧮 Умный калькулятор оценок\n"
+                                            "⭐ Избранные классы и многое другое\n"
+                                            "🚀 И новые функции, которые будут выходить только для премиум-пользователей!</i>\n\n"
+                                            "<b>Спасибо, что ты с нами ❤️</b>"
+                                        ))
+
+    elif res == 'no':
+        await callback.message.answer('❌ Отмена!', reply_markup=kb.ikb_back_menu)
+        
+@admin_router.callback_query(F.data == 'del_prem_user')
+async def cb_del_prem_user(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer('❓ Отправь ID премиум-юзера, которому нужно УДАЛИТЬ из таблицы премиум-юзеров', reply_markup=kb.ikb_back_menu)
+    await state.set_state(DelPrem.wait_send_id)
+    await callback.answer()
+
+
+@admin_router.message(DelPrem.wait_send_id)
+async def send_id_del_prem(message: Message, state: FSMContext):
+    user_id = message.text
+    await state.update_data(user_id=message.text)
+    user_prem = await Database.check_in_premium_users_table(int(user_id))
+    await state.update_data(user_prem=user_prem)
+    if not user_prem:
+        await message.answer(f'❌ Данный пользователь был не найден в базе данных премиум-юзеров!\nID - {user_id}', reply_markup=kb.ikb_back_menu)
+        
+    elif user_prem:
+        await message.answer((f'🚩 У данного пользователя {user_prem.fullname} активирована премка!\n'
+                              f'ID - {user_prem.tg_id} | @{user_prem.username}\n\n'
+                              f'Подписка активна до {(user_prem.premium_end_date).strftime("%d.%m.%Y")}\n'
+                              'Вы точно хотите его УДАЛИТЬ с БД премиум-юзеров???'),
+                             reply_markup=kb.ikb_del_yes_no)
+
+
+@admin_router.callback_query((F.data == 'del_yes') | (F.data == 'del_no'))
+async def yes_no_del_prem(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    user_id = int(data['user_id'])
+    user_prem = data['user_prem']
+    
+    if callback.data == 'del_yes':
+        await Database.del_prem_user(user_id)
+        await callback.message.answer((f'🗑 Данный пользователь {user_prem.fullname} был успешно УДАЛЕН!\n'
+                              f'ID - {user_prem.tg_id} | @{user_prem.username}\n\n'
+                              f'Подписка активна была до {(user_prem.premium_end_date).strftime("%d.%m.%Y")}\n'
+                              ),
+                             reply_markup=kb.ikb_back_menu)
+        
+
+    elif callback.data == 'del_no':
+        await callback.message.answer((f'❌ Отмена УДАЛЕНИЯ премиум-юзера'),
+                             reply_markup=kb.ikb_back_menu)
+    
+    await callback.answer()
+    
+@admin_router.callback_query(F.data == 'check_list_users')
+async def cb_check_list_users(callback: CallbackQuery):
+    await callback.message.edit_text("❗️ Выберите каких юзеров будем чекать :)", reply_markup=kb.ikb_check_normal_or_prem_users)
+    await callback.answer()
+    
+@admin_router.callback_query((F.data == 'check_normal_users') | (F.data == 'check_prem_users'))
+async def check_lists_users(callback: CallbackQuery):
+    if callback.data == 'check_normal_users':
+            users = await Database.get_all_users()
+            user_count = len(users)
+
+            if users:
+                user_list = "\n".join([f"ID: <code>{user.user_id}</code>, Username: @{html.escape(user.username or '—')}, Имя: {html.escape(user.fullname or '—')}" for user in users])
+
+                # Проверка длины сообщения и разбиение, если превышает лимит
+                max_message_length = 4000
+                if len(user_list) > max_message_length:
+                    # Разбиваем список на части
+                    chunks = [user_list[i:i + max_message_length] for i in range(0, len(user_list), max_message_length)]
+                    for chunk in chunks:
+                        await callback.message.answer(
+                            f"📋 <b>Список пользователей:</b>\n\n{chunk}\n\n"
+                            f"🔢 <b>Всего зарегистрировано пользователей:</b> {user_count}"
+                        )
+                else:
+                    # Если сообщение помещается в один раз, отправляем его целиком
+                    await callback.message.answer(
+                        f"📋 <b>Список пользователей:</b>\n\n{user_list}\n\n"
+                        f"🔢 <b>Всего зарегистрировано пользователей:</b> {user_count}"
+                    )
+            else:
+                await callback.message.answer("❗ Пользователи не найдены в базе данных.")
+            
+    elif callback.data == 'check_prem_users':
+            users = await Database.get_all_prem_users()
+            user_count = len(users)
+
+            if users:
+                user_list = "\n".join([f"ID: <code>{user.tg_id}</code>, Username: @{html.escape(user.username or '—')}, Имя: {html.escape(user.fullname or '—')}" for user in users])
+
+                # Проверка длины сообщения и разбиение, если превышает лимит
+                max_message_length = 4000
+                if len(user_list) > max_message_length:
+                    # Разбиваем список на части
+                    chunks = [user_list[i:i + max_message_length] for i in range(0, len(user_list), max_message_length)]
+                    for chunk in chunks:
+                        await callback.message.answer(
+                            f"📋 <b>Список пользователей:</b>\n\n{chunk}\n\n"
+                            f"🔢 <b>Всего премиум-пользователей:</b> {user_count}"
+                        )
+                else:
+                    # Если сообщение помещается в один раз, отправляем его целиком
+                    await callback.message.answer(
+                        f"📋 <b>Список пользователей:</b>\n\n{user_list}\n\n"
+                        f"🔢 <b>Всего премиум-пользователей:</b> {user_count}"
+                    )
+            else:
+                await callback.message.answer("❗ Пользователи не найдены в базе данных.")
+    
+
 @admin_router.message(Command("testmenu"))
 async def cmd_test(message: Message):
         await message.answer(text = (
