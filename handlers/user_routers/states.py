@@ -63,4 +63,7 @@ class SendMenu(StatesGroup):
 
     wait_photo_to_bd = State()
     wait_yes_to_bd = State()
+
+class SetSchoolId(StatesGroup):
+    wait_send_school = State()
     

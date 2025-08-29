@@ -327,3 +327,17 @@ def get_otkl_menu():
         [InlineKeyboardButton(text="❌ Отключить", callback_data="school_menu_otkl")]])
 
     return keyboard
+
+
+
+list_schools = InlineKeyboardMarkup(resize_keyboard=True, inline_keyboard=[
+        [InlineKeyboardButton(text="МОБУ СОШ №1 | с.Бураево", callback_data="id_school_1")],
+        [InlineKeyboardButton(text="Гимназия №2 | с.Бураево", callback_data="id_school_2")],
+        [InlineKeyboardButton(text="МОАУ СОШ №3 | с.Бураево", callback_data="id_school_3")],
+        [InlineKeyboardButton(text="МОБУ СОШ | с.Языково", callback_data="id_school_4")],
+        [InlineKeyboardButton(text="МАОУ ЛИЦЕЙ 5 | г.Уфа", callback_data="id_school_5")],
+        [InlineKeyboardButton(text="МАОУ СОШ №49 | г. Улан-Удэ", callback_data="id_school_6")],
+        [InlineKeyboardButton(text="ГБОУ школа 2044 | г. Москва", callback_data="id_school_7")],
+        [InlineKeyboardButton(text="ГБОУ Школа №962 | г.Москва", callback_data="id_school_8")],
+        [InlineKeyboardButton(text="МБОУ СОШ 17 | мкр.Лиховской", callback_data="id_school_9")],
+        ])

@@ -9,7 +9,7 @@ from database.orm import Database
 from handlers.user_routers.texts import *
 from handlers.user_routers.common import cmd_menu
 from .common import *
-from handlers.user_routers.states import GiveSchedule
+from handlers.user_routers.states import GiveSchedule, SetSchoolId
 from keyboards import reply_kb, inline_kb
 
 
@@ -24,6 +24,9 @@ async def shedule_ikb(callback: CallbackQuery, state: FSMContext):
     await get_shedule_and_give_num(message, state, user_id=callback.from_user.id)
 
     await callback.answer()
+    
+
+@shedule_router.callback_query()
 
 
 @shedule_router.callback_query(GiveSchedule.slctnum and F.data.startswith('cls_'))

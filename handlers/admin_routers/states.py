@@ -7,3 +7,4 @@ class AddNewPrem(StatesGroup):
 class DelPrem(StatesGroup):
     wait_send_id = State()
     wait_send_money = State()
+    

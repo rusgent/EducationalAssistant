@@ -176,21 +176,36 @@ async def get_shedule_and_give_num(message: Message, state: FSMContext, user_id:
     await message.bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
     
     await state.clear()
-
-    await state.set_state(GiveSchedule.slctnum)
-
-    await message.answer(
-        TEXT_SHEDULE_GIVE_NUMBER,
-        reply_markup= await reply_kb.kb_select_class_num(),
-        parse_mode='HTML'
-    )
-
+    
     user_id = user_id or message.from_user.id
+    user = await Database.check_in_premium_users_table(user_id)
+    
+    if user.school_id:
+        print(user.school_id)
 
-    favcls_list = await Database.get_favcls_list(user_id)
+        await state.set_state(GiveSchedule.slctnum)
 
-    if favcls_list:
-        await message.answer("❤ Выберите класс из избранных 👇", reply_markup=inline_kb.get_favcls_ikb(favcls_list))
+        await message.answer(
+            TEXT_SHEDULE_GIVE_NUMBER,
+            reply_markup= await reply_kb.kb_select_class_num(),
+            parse_mode='HTML'
+        )
+
+
+        favcls_list = await Database.get_favcls_list(user_id)
+
+        if favcls_list:
+            await message.answer("❤ Выберите класс из избранных 👇", reply_markup=inline_kb.get_favcls_ikb(favcls_list))
+    
+    else:
+        await state.set_state(SetSchoolId.wait_send_school)
+        
+        await message.answer(
+            SHEDULE_SEND_SCHOOL,
+            reply_markup=inline_kb.list_schools,
+            parse_mode='HTML'
+        )
+        
 
 
 @common_router.message(Command('todo'))
